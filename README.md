@@ -85,3 +85,8 @@ In the left sidebar, enter your Gemini API key. The AI features will activate im
 - [DOMPurify](https://github.com/cure53/DOMPurify) – SVG sanitisation
 
 ## 📁 Repository Structure
+nexus-studio/
+├── index.html # Full application (single file)
+├── README.md # Documentation
+├── RECRUITMENT.md # Join the team
+└── screenshot.png # (optional) preview image
