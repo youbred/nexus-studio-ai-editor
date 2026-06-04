@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Nexus Studio – AI Website Builder</title>
-    <!-- Google Fonts + Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- External libs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -250,6 +248,87 @@
             color: white;
             font-weight: bold;
         }
+
+        /* Style pour la barre d'outils texte */
+        .text-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-top: 8px;
+        }
+        .text-toolbar select, .text-toolbar input {
+            padding: 6px 8px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-size: 0.8rem;
+        }
+        body.dark .text-toolbar select, body.dark .text-toolbar input {
+            background: #1e293b;
+            border-color: #475569;
+            color: white;
+        }
+        .text-toolbar button {
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            background: #e2e8f0;
+            font-weight: bold;
+        }
+        body.dark .text-toolbar button {
+            background: #334155;
+            color: white;
+        }
+
+        /* Corrections mobiles */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                max-height: 45%;
+                border-right: none;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            .main {
+                flex-direction: column;
+            }
+            .btn, .resp-btn {
+                padding: 10px 14px;
+                font-size: 13px;
+                min-height: 44px;
+            }
+            .canvas-viewport {
+                padding: 8px;
+                min-height: auto;
+            }
+            .editable-content {
+                padding: 20px;
+            }
+            .layout-sidebar .editable-content {
+                width: 90%;
+                margin: 20px auto;
+            }
+            .symbol-card {
+                width: 60px;
+                height: 60px;
+            }
+            .topbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .btn-group {
+                justify-content: center;
+            }
+            .canvas-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+            .text-toolbar {
+                justify-content: space-between;
+            }
+        }
     </style>
 </head>
 <body>
@@ -285,6 +364,33 @@
                 <div id="symbolsGrid" class="symbols-grid"></div>
                 <button id="clearAllSymbols" class="btn" style="width:100%; margin-top:12px;"><i class="fas fa-broom"></i> Clear all</button>
                 <div class="label" style="margin-top:8px;">💡 Click a logo to insert at cursor position</div>
+            </div>
+            <!-- NOUVELLE SECTION : ÉDITION DE TEXTE -->
+            <div class="section">
+                <div class="section-title"><i class="fas fa-font"></i> Texte (sélectionnez du texte)</div>
+                <div class="text-toolbar">
+                    <select id="fontSelect">
+                        <option value="Inter, sans-serif">Inter</option>
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="'Courier New', monospace">Courier New</option>
+                        <option value="'Times New Roman', serif">Times</option>
+                    </select>
+                    <select id="fontSizeSelect">
+                        <option value="12px">12px</option>
+                        <option value="14px">14px</option>
+                        <option value="16px">16px</option>
+                        <option value="18px">18px</option>
+                        <option value="20px">20px</option>
+                        <option value="24px">24px</option>
+                        <option value="32px">32px</option>
+                    </select>
+                    <input type="color" id="textColorInput" value="#000000">
+                    <button id="boldBtn" title="Gras"><i class="fas fa-bold"></i></button>
+                    <button id="italicBtn" title="Italique"><i class="fas fa-italic"></i></button>
+                    <button id="clearFormatBtn" title="Effacer le formatage"><i class="fas fa-eraser"></i></button>
+                </div>
+                <div class="label" style="margin-top:8px;">💡 Sélectionnez du texte dans la page, puis choisissez police, taille ou couleur.</div>
             </div>
             <div class="section">
                 <div class="section-title"><i class="fas fa-drafting-compass"></i> Quick Edit</div>
@@ -581,6 +687,87 @@
         });
     }
 
+    // ---------- Édition de texte : police, taille, couleur, gras/italique ----------
+    function applyStyleToSelection(styleProperty, value) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+        const range = selection.getRangeAt(0);
+        if (range.collapsed) return;
+        const span = document.createElement('span');
+        span.style[styleProperty] = value;
+        range.surroundContents(span);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        pushHistory();
+        autoSaveSite();
+    }
+
+    function applyFontFamily(font) {
+        document.execCommand('fontName', false, font);
+        pushHistory();
+        autoSaveSite();
+    }
+
+    function applyFontSize(size) {
+        document.execCommand('fontSize', false, '7'); // workaround: size 1-7, then replace
+        // Better: use span with style
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+        const range = selection.getRangeAt(0);
+        if (range.collapsed) return;
+        const span = document.createElement('span');
+        span.style.fontSize = size;
+        range.surroundContents(span);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        pushHistory();
+        autoSaveSite();
+    }
+
+    function applyForeColor(color) {
+        document.execCommand('foreColor', false, color);
+        pushHistory();
+        autoSaveSite();
+    }
+
+    function applyBold() {
+        document.execCommand('bold', false, null);
+        pushHistory();
+        autoSaveSite();
+    }
+
+    function applyItalic() {
+        document.execCommand('italic', false, null);
+        pushHistory();
+        autoSaveSite();
+    }
+
+    function clearFormat() {
+        document.execCommand('removeFormat', false, null);
+        pushHistory();
+        autoSaveSite();
+    }
+
+    // Événements pour la barre d'outils texte
+    document.getElementById('fontSelect').addEventListener('change', (e) => {
+        applyFontFamily(e.target.value);
+    });
+    document.getElementById('fontSizeSelect').addEventListener('change', (e) => {
+        applyFontSize(e.target.value);
+    });
+    document.getElementById('textColorInput').addEventListener('input', (e) => {
+        applyForeColor(e.target.value);
+    });
+    document.getElementById('boldBtn').addEventListener('click', () => {
+        applyBold();
+    });
+    document.getElementById('italicBtn').addEventListener('click', () => {
+        applyItalic();
+    });
+    document.getElementById('clearFormatBtn').addEventListener('click', () => {
+        clearFormat();
+    });
+
     // ---------- Event listeners for UI sync ----------
     document.getElementById("editableContent").addEventListener("input", () => { pushHistory(); autoSaveSite(); });
     document.getElementById("editableContent").addEventListener("blur", () => { updateUIFromContent(); autoSaveSite(); });
@@ -816,6 +1003,35 @@
         if (e.ctrlKey && e.key === "y") { e.preventDefault(); redo(); }
         if (e.ctrlKey && e.key === "s") { e.preventDefault(); autoSaveSite(); appendChatMessage("bot", "Saved (Ctrl+S)"); }
     });
+
+    // Fix pour l'édition tactile mobile (contenteditable)
+    (function fixMobileContentEditable() {
+        if ('ontouchstart' in window) {
+            const editableDiv = document.getElementById('editableContent');
+            if (!editableDiv) return;
+            let isMobileKeyboardActive = false;
+            editableDiv.addEventListener('focus', () => {
+                isMobileKeyboardActive = true;
+                setTimeout(() => {
+                    if (isMobileKeyboardActive) editableDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            });
+            editableDiv.addEventListener('blur', () => { isMobileKeyboardActive = false; });
+            editableDiv.addEventListener('touchstart', (e) => {
+                if (!editableDiv.isContentEditable) return;
+                const target = e.target;
+                if (target && target.nodeType === Node.TEXT_NODE && target.parentElement === editableDiv) {
+                    e.preventDefault();
+                    const range = document.createRange();
+                    const sel = window.getSelection();
+                    range.selectNodeContents(editableDiv);
+                    range.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+            }, { passive: false });
+        }
+    })();
 
     // Gemini AI functions
     let chatFileData = null;
