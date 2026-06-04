@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Nexus Studio – AI Website Builder</title>
+    <!-- Google Fonts + Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- External libs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f1f5f9;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            transition: background 0.2s, color 0.2s;
+        }
+        body.dark {
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+        body.dark ::-webkit-scrollbar-track { background: #1e293b; }
+        body.dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+        .app { display: flex; flex-direction: column; height: 100%; }
+        .topbar {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            z-index: 20;
+        }
+        body.dark .topbar {
+            background: rgba(15,23,42,0.9);
+            border-bottom-color: #1e293b;
+        }
+        .logo {
+            font-weight: 800;
+            font-size: 1.4rem;
+            background: linear-gradient(135deg, #3b82f6, #a855f7);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+            background: #f1f5f9;
+            color: #1e293b;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        body.dark .btn { background: #334155; color: #e2e8f0; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; transform: translateY(-2px); }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-cyan { background: #06b6d4; color: white; }
+        .main { display: flex; flex: 1; overflow: hidden; }
+        .sidebar {
+            width: 380px;
+            background: white;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 20px;
+            gap: 24px;
+        }
+        body.dark .sidebar { background: #1e293b; border-right-color: #0f172a; }
+        .section {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+        }
+        body.dark .section { background: #0f172a; border-color: #334155; }
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .input-field {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-family: inherit;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+        body.dark .input-field { background: #1e293b; border-color: #475569; color: #f1f5f9; }
+        .label { font-size: 0.75rem; font-weight: 600; margin-bottom: 6px; display: block; color: #475569; }
+        body.dark .label { color: #cbd5e1; }
+        .symbols-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .symbol-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            transition: 0.2s;
+        }
+        body.dark .symbol-card { background: #334155; border-color: #475569; }
+        .symbol-card img { max-width: 100%; max-height: 50px; object-fit: contain; }
+        .symbol-card:hover { transform: scale(1.02); border-color: #3b82f6; }
+        .delete-symbol {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border-radius: 20px;
+            width: 22px;
+            height: 22px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: 0.2s;
+        }
+        .symbol-card:hover .delete-symbol { opacity: 1; }
+        .chat-box { background: #f1f5f9; border-radius: 16px; padding: 12px; }
+        body.dark .chat-box { background: #0f172a; }
+        .chat-messages { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; font-size: 0.8rem; }
+        .message { padding: 8px 12px; border-radius: 16px; max-width: 85%; }
+        .user-msg { background: #3b82f6; color: white; align-self: flex-end; }
+        .bot-msg { background: #e2e8f0; color: #1e293b; align-self: flex-start; }
+        body.dark .bot-msg { background: #334155; color: #e2e8f0; }
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #cbd5e1;
+            padding: 20px;
+            overflow: auto;
+        }
+        .canvas-header {
+            background: white;
+            border-radius: 16px 16px 0 0;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        body.dark .canvas-header { background: #1e293b; }
+        .resp-btn {
+            background: #e2e8f0;
+            border: none;
+            border-radius: 30px;
+            padding: 6px 14px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .resp-btn.active { background: #3b82f6; color: white; }
+        .canvas-viewport {
+            background: white;
+            border-radius: 0 0 16px 16px;
+            flex: 1;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            transition: all 0.2s;
+            min-height: 500px;
+        }
+        .canvas-viewport.responsive-mobile { max-width: 375px; margin: 0 auto; width: 100%; }
+        .canvas-viewport.responsive-tablet { max-width: 768px; margin: 0 auto; width: 100%; }
+        .editable-content {
+            width: 100%;
+            padding: 40px;
+            transition: 0.2s;
+            outline: none;
+        }
+        .layout-center { justify-content: center; align-items: center; }
+        .layout-center .editable-content { max-width: 600px; text-align: center; background: rgba(255,255,255,0.85); border-radius: 32px; box-shadow: 0 20px 35px -10px rgba(0,0,0,0.2); }
+        .layout-sidebar { justify-content: flex-start; align-items: stretch; }
+        .layout-sidebar .editable-content { width: 380px; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; justify-content: center; }
+        .layout-bottom { justify-content: center; align-items: flex-end; }
+        .layout-bottom .editable-content { width: 100%; background: rgba(255,255,255,0.9); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .footer-actions { margin-top: 12px; display: flex; gap: 12px; justify-content: flex-end; }
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1e293b;
+            color: white;
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 30px;
+            cursor: pointer;
+            z-index: 99;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="topbar">
+        <div class="logo"><i class="fas fa-magic"></i> Nexus Studio</div>
+        <div class="btn-group">
+            <label class="btn"><i class="fas fa-image"></i> Background Image<input type="file" id="bgImageInput" accept="image/*" hidden></label>
+            <label class="btn btn-warning"><i class="fas fa-plus-circle"></i> Import Logo/Symbol<input type="file" id="symbolInput" accept="image/*" hidden></label>
+            <label class="btn"><i class="fas fa-file-code"></i> Import HTML<input type="file" id="htmlImport" accept=".html" hidden></label>
+            <button id="saveBtn" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+            <button id="exportPdfBtn" class="btn btn-danger"><i class="fas fa-file-pdf"></i> PDF</button>
+            <button id="exportZipBtn" class="btn btn-success"><i class="fas fa-download"></i> ZIP Site</button>
+            <button id="exportTemplateBtn" class="btn btn-cyan"><i class="fas fa-file-code"></i> Export Template</button>
+        </div>
+    </div>
+    <div class="main">
+        <div class="sidebar">
+            <div class="section">
+                <div class="section-title"><i class="fab fa-google"></i> Gemini Flash API</div>
+                <input type="password" id="apiKey" class="input-field" placeholder="Your API key (starts with AIza...)">
+            </div>
+            <div class="section">
+                <div class="section-title"><i class="fas fa-folder"></i> Pages</div>
+                <select id="pageSelect" class="input-field"></select>
+                <div style="display: flex; gap: 8px;">
+                    <button id="addPageBtn" class="btn" style="flex:1"><i class="fas fa-plus"></i> Add page</button>
+                    <button id="delPageBtn" class="btn btn-danger" style="flex:1"><i class="fas fa-trash"></i> Delete</button>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-title"><i class="fas fa-palette"></i> Logo Library</div>
+                <div id="symbolsGrid" class="symbols-grid"></div>
+                <button id="clearAllSymbols" class="btn" style="width:100%; margin-top:12px;"><i class="fas fa-broom"></i> Clear all</button>
+                <div class="label" style="margin-top:8px;">💡 Click a logo to insert at cursor position</div>
+            </div>
+            <div class="section">
+                <div class="section-title"><i class="fas fa-drafting-compass"></i> Quick Edit</div>
+                <label class="label">Layout</label>
+                <select id="layoutSelect" class="input-field">
+                    <option value="layout-center">Centered</option>
+                    <option value="layout-sidebar">Sidebar</option>
+                    <option value="layout-bottom">Bottom bar</option>
+                </select>
+                <label class="label">Title (H1)</label>
+                <input type="text" id="titleInput" class="input-field">
+                <label class="label">Paragraph</label>
+                <textarea id="descInput" rows="2" class="input-field"></textarea>
+                <label class="label">Button text</label>
+                <input type="text" id="btnTextInput" class="input-field">
+                <label class="label">Button color</label>
+                <input type="color" id="btnColorInput" class="input-field" style="height:42px;">
+                <label class="label">Background opacity (0-100)</label>
+                <input type="range" id="opacityRange" min="0" max="100" value="90">
+            </div>
+            <div class="section">
+                <div class="section-title"><i class="fas fa-robot"></i> Gemini AI Assistant</div>
+                <div class="chat-box">
+                    <div id="chatMessages" class="chat-messages">
+                        <div class="message bot-msg">✨ Ready! Ask me to improve your design.</div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="chatInput" class="input-field" placeholder="e.g., make the page modern and add a gradient">
+                        <button id="sendChat" class="btn btn-primary"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                    <div style="margin-top:8px;">
+                        <label class="btn" style="width:100%"><i class="fas fa-paperclip"></i> Attach file<input type="file" id="chatFile" hidden></label>
+                        <span id="fileStatus" style="font-size:11px;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="canvas-area">
+            <div class="canvas-header">
+                <div><strong id="currentPageLabel">index.html</strong> <span style="font-size:12px;">(click to edit directly)</span></div>
+                <div class="responsive-controls">
+                    <button class="resp-btn" data-view="desktop">🖥️ Desktop</button>
+                    <button class="resp-btn" data-view="tablet">📱 Tablet</button>
+                    <button class="resp-btn" data-view="mobile">📲 Mobile</button>
+                </div>
+            </div>
+            <div id="canvasViewport" class="canvas-viewport layout-center">
+                <div id="editableContent" class="editable-content" contenteditable="true">
+                    <h1>Welcome to Nexus Studio</h1>
+                    <p>Build beautiful websites with AI assistance. Import logos, edit everything, export your work.</p>
+                    <button style="background:#3b82f6; color:white; border:none; padding:10px 24px; border-radius:40px;">Get Started</button>
+                </div>
+            </div>
+            <div class="footer-actions">
+                <button id="aiEnhanceText" class="btn"><i class="fas fa-sparkles"></i> Enhance text</button>
+                <button id="aiModernStyle" class="btn"><i class="fas fa-gem"></i> Modern style</button>
+                <button id="aiCustom" class="btn"><i class="fas fa-comment-dots"></i> Custom prompt</button>
+            </div>
+        </div>
+    </div>
+</div>
+<button id="themeToggleBtn" class="theme-toggle"><i class="fas fa-moon"></i></button>
+<div id="loadingOverlay" class="loading-overlay"><i class="fas fa-spinner fa-pulse"></i> AI is thinking...</div>
+
+<script>
+    // ---------- IndexedDB for logos ----------
+    let db;
+    const DB_NAME = "NexusStudioDB";
+    const STORE_SYMBOLS = "symbols";
+    let symbolsList = [];
+
+    function openDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, 1);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => { db = request.result; resolve(db); };
+            request.onupgradeneeded = (e) => {
+                db = e.target.result;
+                if (!db.objectStoreNames.contains(STORE_SYMBOLS)) {
+                    db.createObjectStore(STORE_SYMBOLS, { keyPath: "id", autoIncrement: true });
+                }
+            };
+        });
+    }
+
+    async function loadSymbolsFromDB() {
+        if (!db) await openDB();
+        const tx = db.transaction(STORE_SYMBOLS, "readonly");
+        const store = tx.objectStore(STORE_SYMBOLS);
+        symbolsList = await store.getAll();
+        renderSymbolsGrid();
+    }
+
+    async function addSymbolToDB(dataUrl, name) {
+        if (!db) await openDB();
+        const tx = db.transaction(STORE_SYMBOLS, "readwrite");
+        const store = tx.objectStore(STORE_SYMBOLS);
+        const id = await store.add({ dataUrl, name, date: Date.now() });
+        symbolsList.push({ id, dataUrl, name });
+        renderSymbolsGrid();
+    }
+
+    async function deleteSymbolFromDB(id) {
+        if (!db) await openDB();
+        const tx = db.transaction(STORE_SYMBOLS, "readwrite");
+        const store = tx.objectStore(STORE_SYMBOLS);
+        await store.delete(id);
+        symbolsList = symbolsList.filter(s => s.id !== id);
+        renderSymbolsGrid();
+    }
+
+    async function clearAllSymbolsDB() {
+        if (!db) await openDB();
+        const tx = db.transaction(STORE_SYMBOLS, "readwrite");
+        const store = tx.objectStore(STORE_SYMBOLS);
+        await store.clear();
+        symbolsList = [];
+        renderSymbolsGrid();
+    }
+
+    function renderSymbolsGrid() {
+        const grid = document.getElementById("symbolsGrid");
+        if (!grid) return;
+        grid.innerHTML = "";
+        if (symbolsList.length === 0) {
+            grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#94a3b8;">No logos imported</div>';
+            return;
+        }
+        symbolsList.forEach(sym => {
+            const card = document.createElement("div");
+            card.className = "symbol-card";
+            const img = document.createElement("img");
+            img.src = sym.dataUrl;
+            img.alt = sym.name;
+            card.appendChild(img);
+            const delBtn = document.createElement("div");
+            delBtn.className = "delete-symbol";
+            delBtn.innerHTML = '<i class="fas fa-times"></i>';
+            delBtn.onclick = (e) => { e.stopPropagation(); deleteSymbolFromDB(sym.id); };
+            card.appendChild(delBtn);
+            card.onclick = () => insertImageAtCursor(sym.dataUrl);
+            grid.appendChild(card);
+        });
+    }
+
+    function insertImageAtCursor(dataUrl) {
+        const contentDiv = document.getElementById("editableContent");
+        const selection = window.getSelection();
+        let range;
+        if (selection.rangeCount > 0 && selection.getRangeAt(0).commonAncestorContainer.parentElement?.isContentEditable) {
+            range = selection.getRangeAt(0);
+            range.deleteContents();
+        } else {
+            range = document.createRange();
+            range.selectNodeContents(contentDiv);
+            range.collapse(false);
+        }
+        const imgHtml = `<img src="${dataUrl}" style="max-width:150px; max-height:150px; margin:8px; display:inline-block;" contenteditable="false">`;
+        const fragment = range.createContextualFragment(imgHtml);
+        range.insertNode(fragment);
+        range.collapse(false);
+        updateUIFromContent();
+        autoSaveSite();
+    }
+
+    // ---------- Page management ----------
+    let sitePages = {
+        "index.html": {
+            title: "Nexus Studio",
+            desc: "Create modern websites with artificial intelligence assistance.",
+            btnText: "Explore",
+            btnColor: "#3b82f6",
+            opacity: 90,
+            layout: "layout-center",
+            bg: "",
+            htmlContent: ""
+        },
+        "about.html": {
+            title: "About Us",
+            desc: "Our mission is to make web design accessible to everyone.",
+            btnText: "Contact",
+            btnColor: "#8b5cf6",
+            opacity: 85,
+            layout: "layout-sidebar",
+            bg: "",
+            htmlContent: ""
+        }
+    };
+    let currentPage = "index.html";
+    let historyStack = [];
+    let historyIndex = -1;
+
+    function pushHistory() {
+        const html = document.getElementById("editableContent").innerHTML;
+        historyStack = historyStack.slice(0, historyIndex + 1);
+        historyStack.push(html);
+        historyIndex++;
+        if (historyStack.length > 50) historyStack.shift();
+    }
+
+    function undo() { if (historyIndex > 0) { historyIndex--; document.getElementById("editableContent").innerHTML = historyStack[historyIndex]; updateUIFromContent(); } }
+    function redo() { if (historyIndex < historyStack.length - 1) { historyIndex++; document.getElementById("editableContent").innerHTML = historyStack[historyIndex]; updateUIFromContent(); } }
+
+    function syncPageFromCanvas() {
+        const contentHtml = document.getElementById("editableContent").innerHTML;
+        sitePages[currentPage].htmlContent = contentHtml;
+        sitePages[currentPage].title = document.getElementById("titleInput").value;
+        sitePages[currentPage].desc = document.getElementById("descInput").value;
+        sitePages[currentPage].btnText = document.getElementById("btnTextInput").value;
+        sitePages[currentPage].btnColor = document.getElementById("btnColorInput").value;
+        sitePages[currentPage].opacity = parseInt(document.getElementById("opacityRange").value);
+        sitePages[currentPage].layout = document.getElementById("layoutSelect").value;
+    }
+
+    function applyPageToCanvas() {
+        const page = sitePages[currentPage];
+        document.getElementById("titleInput").value = page.title;
+        document.getElementById("descInput").value = page.desc;
+        document.getElementById("btnTextInput").value = page.btnText;
+        document.getElementById("btnColorInput").value = page.btnColor;
+        document.getElementById("opacityRange").value = page.opacity;
+        document.getElementById("layoutSelect").value = page.layout;
+        let finalHtml = page.htmlContent;
+        if (!finalHtml || finalHtml.trim() === "") {
+            finalHtml = `<h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.desc)}</p><button style="background:${page.btnColor}; color:white; border:none; padding:10px 24px; border-radius:40px;">${escapeHtml(page.btnText)}</button>`;
+        }
+        document.getElementById("editableContent").innerHTML = finalHtml;
+        const viewport = document.getElementById("canvasViewport");
+        viewport.className = `canvas-viewport ${page.layout}`;
+        viewport.style.backgroundImage = page.bg ? `url("${page.bg}")` : "none";
+        viewport.style.backgroundSize = "cover";
+        const op = page.opacity / 100;
+        document.getElementById("editableContent").style.backgroundColor = `rgba(255,255,255,${op})`;
+        updateUIFromContent();
+        autoSaveSite();
+    }
+
+    function updateUIFromContent() {
+        const content = document.getElementById("editableContent");
+        const h1 = content.querySelector("h1");
+        if (h1) document.getElementById("titleInput").value = h1.innerText;
+        const p = content.querySelector("p");
+        if (p) document.getElementById("descInput").value = p.innerText;
+        const btn = content.querySelector("button");
+        if (btn) {
+            document.getElementById("btnTextInput").value = btn.innerText;
+            const bgColor = btn.style.backgroundColor;
+            if (bgColor) document.getElementById("btnColorInput").value = rgbToHex(bgColor);
+        }
+        syncPageFromCanvas();
+    }
+
+    function rgbToHex(rgb) {
+        if (!rgb) return "#3b82f6";
+        const res = rgb.match(/\d+/g);
+        if (!res) return "#3b82f6";
+        return "#" + ((1 << 24) + (parseInt(res[0]) << 16) + (parseInt(res[1]) << 8) + parseInt(res[2])).toString(16).slice(1);
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === "&") return "&amp;";
+            if (m === "<") return "&lt;";
+            if (m === ">") return "&gt;";
+            return m;
+        });
+    }
+
+    function autoSaveSite() {
+        syncPageFromCanvas();
+        localStorage.setItem("nexus_siteData", JSON.stringify(sitePages));
+        localStorage.setItem("nexus_currentPage", currentPage);
+    }
+
+    function loadSavedData() {
+        const saved = localStorage.getItem("nexus_siteData");
+        if (saved) sitePages = JSON.parse(saved);
+        const savedPage = localStorage.getItem("nexus_currentPage");
+        if (savedPage && sitePages[savedPage]) currentPage = savedPage;
+        refreshPageSelector();
+        applyPageToCanvas();
+        pushHistory();
+    }
+
+    function refreshPageSelector() {
+        const select = document.getElementById("pageSelect");
+        select.innerHTML = "";
+        Object.keys(sitePages).forEach(page => {
+            const opt = document.createElement("option");
+            opt.value = page;
+            opt.textContent = page;
+            if (page === currentPage) opt.selected = true;
+            select.appendChild(opt);
+        });
+    }
+
+    // ---------- Event listeners for UI sync ----------
+    document.getElementById("editableContent").addEventListener("input", () => { pushHistory(); autoSaveSite(); });
+    document.getElementById("editableContent").addEventListener("blur", () => { updateUIFromContent(); autoSaveSite(); });
+    document.getElementById("titleInput").addEventListener("input", () => { document.getElementById("editableContent").querySelector("h1").innerText = document.getElementById("titleInput").value; autoSaveSite(); });
+    document.getElementById("descInput").addEventListener("input", () => { document.getElementById("editableContent").querySelector("p").innerText = document.getElementById("descInput").value; autoSaveSite(); });
+    document.getElementById("btnTextInput").addEventListener("input", () => { const btn = document.getElementById("editableContent").querySelector("button"); if (btn) btn.innerText = document.getElementById("btnTextInput").value; autoSaveSite(); });
+    document.getElementById("btnColorInput").addEventListener("input", () => { const btn = document.getElementById("editableContent").querySelector("button"); if (btn) btn.style.backgroundColor = document.getElementById("btnColorInput").value; autoSaveSite(); });
+    document.getElementById("opacityRange").addEventListener("input", () => { const op = document.getElementById("opacityRange").value / 100; document.getElementById("editableContent").style.backgroundColor = `rgba(255,255,255,${op})`; autoSaveSite(); });
+    document.getElementById("layoutSelect").addEventListener("change", () => { document.getElementById("canvasViewport").className = `canvas-viewport ${document.getElementById("layoutSelect").value}`; autoSaveSite(); });
+
+    // Page handling
+    document.getElementById("addPageBtn").onclick = () => {
+        let name = prompt("New page name (e.g., services.html):");
+        if (name && name.endsWith(".html") && !sitePages[name]) {
+            sitePages[name] = { title: "New Page", desc: "Edit this content", btnText: "Button", btnColor: "#3b82f6", opacity: 90, layout: "layout-center", bg: "", htmlContent: "" };
+            refreshPageSelector();
+            currentPage = name;
+            applyPageToCanvas();
+            autoSaveSite();
+        } else alert("Invalid name or already exists");
+    };
+    document.getElementById("delPageBtn").onclick = () => {
+        if (currentPage === "index.html") return alert("Cannot delete home page");
+        if (confirm(`Delete ${currentPage}?`)) {
+            delete sitePages[currentPage];
+            currentPage = "index.html";
+            refreshPageSelector();
+            applyPageToCanvas();
+            autoSaveSite();
+        }
+    };
+    document.getElementById("pageSelect").onchange = (e) => { currentPage = e.target.value; applyPageToCanvas(); };
+
+    // Background image
+    document.getElementById("bgImageInput").addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                sitePages[currentPage].bg = ev.target.result;
+                document.getElementById("canvasViewport").style.backgroundImage = `url("${ev.target.result}")`;
+                autoSaveSite();
+                appendChatMessage("bot", "Background image updated.");
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Import HTML
+    document.getElementById("htmlImport").addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(ev.target.result, "text/html");
+                const h1 = doc.querySelector("h1")?.innerText || "Imported";
+                const p = doc.querySelector("p")?.innerText || "";
+                const btn = doc.querySelector("button")?.innerText || "Action";
+                sitePages[currentPage].title = h1;
+                sitePages[currentPage].desc = p;
+                sitePages[currentPage].btnText = btn;
+                applyPageToCanvas();
+                autoSaveSite();
+                appendChatMessage("bot", "HTML imported successfully.");
+            };
+            reader.readAsText(file);
+        }
+    });
+
+    // Logo import
+    document.getElementById("symbolInput").addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (file && file.type.startsWith("image/")) {
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                let data = ev.target.result;
+                if (file.type === "image/svg+xml") {
+                    const svgText = atob(data.split(',')[1]);
+                    const clean = DOMPurify.sanitize(svgText, { USE_PROFILES: { svg: true } });
+                    data = "data:image/svg+xml;base64," + btoa(clean);
+                }
+                await addSymbolToDB(data, file.name);
+                appendChatMessage("bot", `Logo "${file.name}" added to library.`);
+            };
+            reader.readAsDataURL(file);
+        }
+        e.target.value = "";
+    });
+    document.getElementById("clearAllSymbols").onclick = async () => {
+        if (confirm("Clear entire logo library?")) {
+            await clearAllSymbolsDB();
+            appendChatMessage("bot", "Library cleared.");
+        }
+    };
+
+    // Save
+    document.getElementById("saveBtn").onclick = () => { autoSaveSite(); appendChatMessage("bot", "Project saved."); };
+
+    // PDF export
+    document.getElementById("exportPdfBtn").onclick = async () => {
+        const element = document.getElementById("canvasViewport");
+        const opt = { margin: 0.5, filename: `${currentPage}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 } };
+        await html2pdf().set(opt).from(element).save();
+    };
+
+    // ZIP export (full site)
+    document.getElementById("exportZipBtn").onclick = () => {
+        const zip = new JSZip();
+        Object.keys(sitePages).forEach(page => {
+            const html = generateFullHTML(page);
+            zip.file(page, html);
+        });
+        zip.generateAsync({ type: "blob" }).then(blob => {
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "nexus_site.zip";
+            link.click();
+            appendChatMessage("bot", "ZIP archive ready.");
+        });
+    };
+
+    function generateFullHTML(pageKey) {
+        const data = sitePages[pageKey];
+        const op = data.opacity / 100;
+        let layoutStyle = "";
+        let contentClass = "";
+        if (data.layout === "layout-center") { layoutStyle = "justify-content:center; align-items:center;"; contentClass = "center-box"; }
+        if (data.layout === "layout-sidebar") { layoutStyle = "justify-content:flex-start;"; contentClass = "sidebar-box"; }
+        if (data.layout === "layout-bottom") { layoutStyle = "justify-content:center; align-items:flex-end;"; contentClass = "bottom-box"; }
+        const bgStyle = data.bg ? `background-image: url('${data.bg}'); background-size:cover;` : "";
+        return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${data.title}</title><style>body{margin:0;font-family:Inter,sans-serif;}.viewport{min-height:100vh;display:flex;${bgStyle}background:#f1f5f9;${layoutStyle}}.content{max-width:600px;padding:40px;background:rgba(255,255,255,${op});border-radius:32px;text-align:center;}h1{color:#1e293b;}button{background:${data.btnColor};border:none;padding:12px 24px;border-radius:40px;color:white;cursor:pointer;}</style></head><body><div class="viewport"><div class="content"><h1>${data.title}</h1><p>${data.desc}</p><button>${data.btnText}</button></div></div></body></html>`;
+    }
+
+    // Export current template (complete with inserted logos)
+    document.getElementById("exportTemplateBtn").onclick = () => {
+        const contentHTML = document.getElementById("editableContent").innerHTML;
+        const bgImage = sitePages[currentPage].bg || '';
+        const bgStyle = bgImage ? `background-image: url("${bgImage}"); background-size: cover; background-position: center;` : '';
+        const layoutClass = document.getElementById("layoutSelect").value;
+        let layoutStyles = '';
+        let wrapperClass = 'editable-content';
+        if (layoutClass === 'layout-center') {
+            layoutStyles = 'display: flex; justify-content: center; align-items: center; min-height: 100vh;';
+            wrapperClass += ' center-wrap';
+        } else if (layoutClass === 'layout-sidebar') {
+            layoutStyles = 'display: flex; justify-content: flex-start; align-items: stretch; min-height: 100vh;';
+            wrapperClass += ' sidebar-wrap';
+        } else if (layoutClass === 'layout-bottom') {
+            layoutStyles = 'display: flex; justify-content: center; align-items: flex-end; min-height: 100vh;';
+            wrapperClass += ' bottom-wrap';
+        }
+        const opacity = parseInt(document.getElementById("opacityRange").value) / 100;
+        const btnColor = document.getElementById("btnColorInput").value;
+        const exportHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${escapeHtml(sitePages[currentPage].title)} - Nexus Template</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; }
+        .canvas-viewport {
+            ${bgStyle}
+            ${layoutStyles}
+            background-color: #f8fafc;
+        }
+        .editable-content {
+            padding: 40px;
+            border-radius: 32px;
+            background-color: rgba(255, 255, 255, ${opacity});
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.1);
+            max-width: 90%;
+            width: 100%;
+        }
+        .center-wrap { text-align: center; max-width: 600px; margin: 0 auto; }
+        .sidebar-wrap { width: 380px; margin-left: 0; height: 100%; border-radius: 0 32px 32px 0; }
+        .bottom-wrap { width: 100%; border-radius: 32px 32px 0 0; display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; }
+        h1 { font-size: 2.2rem; margin-bottom: 1rem; color: #1e293b; }
+        p { font-size: 1rem; line-height: 1.5; margin-bottom: 1.5rem; color: #334155; }
+        button { background-color: ${btnColor}; color: white; border: none; padding: 12px 28px; border-radius: 40px; font-weight: 600; cursor: pointer; font-size: 1rem; transition: 0.2s; }
+        button:hover { transform: translateY(-2px); opacity: 0.9; }
+        img { max-width: 100%; height: auto; border-radius: 12px; margin: 10px 0; }
+        @media (max-width: 768px) {
+            .sidebar-wrap { width: 100%; border-radius: 0; }
+            .bottom-wrap { flex-direction: column; text-align: center; }
+            .editable-content { padding: 20px; }
+            h1 { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="canvas-viewport">
+        <div class="${wrapperClass}">
+            ${contentHTML}
+        </div>
+    </div>
+</body>
+</html>`;
+        const blob = new Blob([exportHtml], { type: "text/html" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `template_${currentPage.replace('.html', '')}.html`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+        appendChatMessage("bot", "Template HTML exported successfully!");
+    };
+
+    // Responsive preview
+    document.querySelectorAll(".resp-btn").forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll(".resp-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            const v = btn.dataset.view;
+            const vp = document.getElementById("canvasViewport");
+            vp.classList.remove("responsive-mobile", "responsive-tablet", "responsive-desktop");
+            if (v !== "desktop") vp.classList.add(`responsive-${v}`);
+        };
+    });
+
+    // Dark mode
+    const themeBtn = document.getElementById("themeToggleBtn");
+    themeBtn.onclick = () => {
+        document.body.classList.toggle("dark");
+        localStorage.setItem("nexus_theme", document.body.classList.contains("dark") ? "dark" : "light");
+    };
+    if (localStorage.getItem("nexus_theme") === "dark") document.body.classList.add("dark");
+
+    // Undo/Redo shortcuts
+    document.addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.key === "z") { e.preventDefault(); undo(); }
+        if (e.ctrlKey && e.key === "y") { e.preventDefault(); redo(); }
+        if (e.ctrlKey && e.key === "s") { e.preventDefault(); autoSaveSite(); appendChatMessage("bot", "Saved (Ctrl+S)"); }
+    });
+
+    // Gemini AI functions
+    let chatFileData = null;
+    document.getElementById("chatFile").addEventListener("change", (e) => {
+        const f = e.target.files[0];
+        if (f) {
+            const reader = new FileReader();
+            reader.onload = (ev) => { chatFileData = ev.target.result.split(',')[1]; document.getElementById("fileStatus").innerText = "✓ File attached"; };
+            reader.readAsDataURL(f);
+        }
+    });
+    function appendChatMessage(role, text) {
+        const container = document.getElementById("chatMessages");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `message ${role === "user" ? "user-msg" : "bot-msg"}`;
+        msgDiv.innerText = text;
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+    async function callGemini(prompt) {
+        const apiKey = document.getElementById("apiKey").value.trim();
+        if (!apiKey || !apiKey.startsWith("AIza")) { appendChatMessage("bot", "❌ Please enter a valid Gemini API key."); return; }
+        document.getElementById("loadingOverlay").style.display = "flex";
+        try {
+            const canvas = await html2canvas(document.getElementById("canvasViewport"), { scale: 1, backgroundColor: "#fff" });
+            const base64 = canvas.toDataURL("image/jpeg").split(",")[1];
+            const parts = [{ text: `You are an expert UI/UX designer. Analyze the webpage screenshot and respond ONLY with JSON using keys: "title", "desc", "btnText", "btnColor", "layout" (layout-center,layout-sidebar,layout-bottom), "opacity" (0-100), "newHtml" (optional). Request: ${prompt}. Return only valid JSON.` }];
+            parts.push({ inlineData: { mimeType: "image/jpeg", data: base64 } });
+            if (chatFileData) parts.push({ inlineData: { mimeType: "application/octet-stream", data: chatFileData } });
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: { temperature: 0.7 } })
+            });
+            const data = await response.json();
+            const raw = data.candidates[0].content.parts[0].text;
+            const clean = raw.replace(/```json|```/g, '').trim();
+            const json = JSON.parse(clean);
+            if (json.title) document.getElementById("titleInput").value = json.title;
+            if (json.desc) document.getElementById("descInput").value = json.desc;
+            if (json.btnText) document.getElementById("btnTextInput").value = json.btnText;
+            if (json.btnColor) document.getElementById("btnColorInput").value = json.btnColor;
+            if (json.layout) document.getElementById("layoutSelect").value = json.layout;
+            if (json.opacity) document.getElementById("opacityRange").value = json.opacity;
+            if (json.newHtml) document.getElementById("editableContent").innerHTML = json.newHtml;
+            applyPageToCanvas();
+            appendChatMessage("bot", "✅ AI modifications applied!");
+        } catch (err) { appendChatMessage("bot", "AI error: " + err.message); }
+        finally { document.getElementById("loadingOverlay").style.display = "none"; chatFileData = null; document.getElementById("fileStatus").innerText = ""; }
+    }
+    document.getElementById("sendChat").onclick = () => {
+        const q = document.getElementById("chatInput").value.trim();
+        if (q) { appendChatMessage("user", q); callGemini(q); document.getElementById("chatInput").value = ""; }
+    };
+    document.getElementById("aiEnhanceText").onclick = () => callGemini("Improve the text on the page (title and description) to make it more professional and engaging.");
+    document.getElementById("aiModernStyle").onclick = () => callGemini("Apply a modern style: gradients, subtle shadows, elegant fonts, fresh colors.");
+    document.getElementById("aiCustom").onclick = () => { const custom = prompt("Your custom request for the AI:"); if(custom) callGemini(custom); };
+
+    // Initialisation
+    (async () => {
+        await openDB();
+        await loadSymbolsFromDB();
+        loadSavedData();
+        pushHistory();
+        appendChatMessage("bot", "🚀 Nexus Studio ready. Import logos and use Gemini AI.");
+    })();
+</script>
+</body>
+</html>
