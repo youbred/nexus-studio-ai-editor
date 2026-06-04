@@ -1,2 +1,23 @@
 # nexus-studio-ai-editor
 AI-powered WYSIWYG website editor with Gemini, logo library, multi-page export – no server required
+# Nexus Studio – AI Website Editor
+
+**Nexus Studio** is a browser‑based WYSIWYG website builder with integrated **Gemini 1.5 Flash** AI.  
+Create, edit, and export multi‑page websites with custom logos, background images, and responsive layouts – no server required.
+
+## Features
+- 🎨 Visual editor (click and edit)
+- 🤖 Gemini AI assistant (improve text, change colors, apply modern styles)
+- 🖼️ Logo library (IndexedDB – unlimited storage)
+- 📄 Multi‑page projects
+- 💾 Auto‑save (localStorage)
+- 📱 Responsive preview (desktop, tablet, mobile)
+- 🖨️ Export: PDF, ZIP (full site), standalone HTML template
+
+## How to use
+1. Download or clone this repository.
+2. Open `index.html` in a modern browser (Chrome, Edge, Firefox).
+3. Get a free Gemini API key from [Google AI Studio](https://aistudio.google.com/).
+4. Paste the key in the left sidebar and start editing.
+## License
+MIT – free for personal and commercial use.
