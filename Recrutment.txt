@@ -1,0 +1,47 @@
+# RECRUITMENT – Nexus Studio  
+## Join the adventure!
+
+Thank you for your interest in **Nexus Studio** – a free, browser‑based WYSIWYG website editor powered by Gemini AI.
+
+We are looking for **volunteers, testers, developers, designers, and content creators** to help us improve the tool and spread the word.
+
+---
+
+## 🔍 Who we’re looking for
+
+| Role | What you can do |
+|------|----------------|
+| **Early testers / users** | Use the tool, report bugs, suggest improvements, share your feedback. |
+| **Developers (JS, HTML/CSS, Python)** | Enhance the editor, add features (drag & drop, new templates, AI integrations, export options). |
+| **UI/UX designers** | Propose visual and ergonomic improvements. |
+| **Technical writers / community managers** | Write tutorials, blog posts, manage social media, create video demos. |
+| **Ambassadors** | Share Nexus Studio in your communities (dev.to, LinkedIn, Twitter, Product Hunt, Discord). |
+
+---
+
+## 📌 How to apply
+
+Send a message to: **nexus-studio@example.com** (replace with your real email)  
+or open a **GitHub issue** with the label `recruitment`.
+
+Please include:
+- Your name / handle
+- What you would like to do (tester, developer, design, writing, etc.)
+- Your experience (even beginners are welcome – enthusiasm matters!)
+- Availability (a few hours per week, occasional, etc.)
+
+---
+
+## 🎁 What we offer
+
+- Be part of a useful open‑source project
+- Credits in the repository and on the official website
+- Early access to new features
+- Possibility to co‑author articles or present the tool at online events
+
+---
+
+## 🚀 Together, let’s make Nexus Studio a reference tool.
+
+Thank you!  
+**The Nexus Studio team**
